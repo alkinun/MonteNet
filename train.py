@@ -22,8 +22,8 @@ def generate_example():
         output_grid.append(row)
     for i in range(2, 4):
         output_grid[i] = output_grid[i][::-1]
-    return {'input': input_grid, 'output': output_grid}
-data = {'train': [generate_example() for _ in range(100)]}
+    return {"input": input_grid, "output": output_grid}
+data = {"train": [generate_example() for _ in range(100)]}
 
 
 def one_hot_encode(data, num_classes=10):
@@ -33,23 +33,23 @@ def one_hot_encode(data, num_classes=10):
 
 class PuzzleDataset(Dataset):
     def __init__(self, data):
-        self.data = data['train']
+        self.data = data["train"]
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         sample = self.data[idx]
-        input_tensor = torch.tensor(one_hot_encode(sample['input']), dtype=torch.float32).flatten()
-        output_tensor = torch.tensor(one_hot_encode(sample['output']), dtype=torch.float32)
+        input_tensor = torch.tensor(one_hot_encode(sample["input"]), dtype=torch.float32).flatten()
+        output_tensor = torch.tensor(one_hot_encode(sample["output"]), dtype=torch.float32)
         return input_tensor, output_tensor
 
 # Split the data into training and validation sets
-train_data = data['train'][:int(len(data['train'])*.9)]
-val_data = data['train'][int(len(data['train'])*.1):]
+train_data = data["train"][:int(len(data["train"])*.9)]
+val_data = data["train"][int(len(data["train"])*.1):]
 
-data_train = {'train': train_data}
-data_val = {'train': val_data}
+data_train = {"train": train_data}
+data_val = {"train": val_data}
 
 # Create the DataLoaders
 train_dataset = PuzzleDataset(data_train)
@@ -62,9 +62,9 @@ val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.fc1 = nn.Linear(4 * 10, 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, 36 * 10)
+        self.fc1 = nn.Linear(4 * 10, 1024)
+        self.fc2 = nn.Linear(1024, 1024)
+        self.fc3 = nn.Linear(1024, 36 * 10)
 
     def forward(self, x):
         x = x.view(-1, 4 * 10)
@@ -102,6 +102,7 @@ def calculate_accuracy(model, data_loader):
 
 grads = None
 train_losses = []
+train_accuracies = []
 val_accuracies = []
 
 for epoch in range(num_epochs):
@@ -121,27 +122,38 @@ for epoch in range(num_epochs):
     epoch_loss /= len(train_loader)
     train_losses.append(epoch_loss)
 
+    # Calculate accuracies
+    train_accuracy = calculate_accuracy(model, train_loader)
     val_accuracy = calculate_accuracy(model, val_loader)
+
+    train_accuracies.append(train_accuracy)
     val_accuracies.append(val_accuracy)
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Val Accuracy: {val_accuracy:.4f}')
+    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Val Accuracy: {val_accuracy:.4f}")
 
 # Save the model
-torch.save(model.state_dict(), 'model')
+torch.save(model.state_dict(), "model")
 
-# Plot the training loss and validation accuracy
-fig, ax1 = plt.subplots()
+# Plot the metrics
+fig, ax1 = plt.subplots(figsize=(10, 7))
 
-ax1.set_xlabel('Epochs')
-ax1.set_ylabel('Training Loss', color='tab:blue')
-ax1.plot(range(1, num_epochs + 1), train_losses, label='Training Loss', color='tab:blue')
-ax1.tick_params(axis='y', labelcolor='tab:blue')
+# Plot Training Loss
+ax1.set_xlabel("Epochs")
+ax1.set_ylabel("Training Loss", color="tab:cyan")
+ax1.plot(range(1, num_epochs + 1), train_losses, label="Training Loss", color="tab:cyan")
+ax1.tick_params(axis="y", labelcolor="tab:cyan")
 
+# Create a second y-axis for accuracy
 ax2 = ax1.twinx()
-ax2.set_ylabel('Validation Accuracy', color='tab:red')
-ax2.plot(range(1, num_epochs + 1), val_accuracies, label='Validation Accuracy', color='tab:red')
-ax2.tick_params(axis='y', labelcolor='tab:red')
+ax2.set_ylabel("Accuracy")
+ax2.plot(range(1, num_epochs + 1), train_accuracies, label="Training Accuracy", color="tab:blue")
+ax2.plot(range(1, num_epochs + 1), val_accuracies, label="Validation Accuracy", color="tab:orange")
+ax2.tick_params(axis="y")
 
+# Add titles and legends
 fig.tight_layout()
-plt.title('Training Loss and Validation Accuracy over Epochs')
+ax1.legend(loc="upper left")
+ax2.legend(loc="upper right")
+plt.title("Loss & Accuracy")
+
 plt.show()

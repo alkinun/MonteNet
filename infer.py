@@ -8,9 +8,9 @@ from torchsummary import summary
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.fc1 = nn.Linear(4 * 10, 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, 36 * 10)
+        self.fc1 = nn.Linear(4 * 10, 1024)
+        self.fc2 = nn.Linear(1024, 1024)
+        self.fc3 = nn.Linear(1024, 36 * 10)
 
     def forward(self, x):
         x = x.view(-1, 4 * 10)
@@ -19,10 +19,10 @@ class Model(nn.Module):
         x = self.fc3(x)
         return x.view(-1, 6, 6, 10)
 
-# Load the trained model (assume the model is saved as 'model')
+# Load the trained model (assume the model is saved as "model")
 model = Model()
-model.load_state_dict(torch.load('model'))
-summary(model, (4 * 10,))
+model.load_state_dict(torch.load("model"))
+summary(model, (4 * 10,), device="cpu")
 model.eval()
 
 # One-hot encode the input data
