@@ -9,6 +9,10 @@ import random
 from torchsummary import summary
 
 
+# Check if GPU is available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'Using device: {device}')
+
 # Define the dataset
 def generate_example():
     input_grid = [[random.randint(0, 9) for _ in range(2)] for _ in range(2)]
@@ -24,7 +28,6 @@ def generate_example():
         output_grid[i] = output_grid[i][::-1]
     return {"input": input_grid, "output": output_grid}
 data = {"train": [generate_example() for _ in range(100)]}
-
 
 def one_hot_encode(data, num_classes=10):
     data = np.array(data)
@@ -62,9 +65,9 @@ val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.fc1 = nn.Linear(4 * 10, 1024)
-        self.fc2 = nn.Linear(1024, 1024)
-        self.fc3 = nn.Linear(1024, 36 * 10)
+        self.fc1 = nn.Linear(4 * 10, 2048)
+        self.fc2 = nn.Linear(2048, 2048)
+        self.fc3 = nn.Linear(2048, 36 * 10)
 
     def forward(self, x):
         x = x.view(-1, 4 * 10)
@@ -73,8 +76,8 @@ class Model(nn.Module):
         x = self.fc3(x)
         return x.view(-1, 6, 6, 10)
 
-model = Model()
-summary(model, (4 * 10,), device="cpu")
+model = Model().to(device)
+summary(model, (4 * 10,), device="cuda")
 
 # Hyperparameters
 alpha = 0.98
@@ -93,6 +96,7 @@ def calculate_accuracy(model, data_loader):
     total = 0
     with torch.no_grad():
         for inputs, targets in data_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 3)
             _, targets_max = torch.max(targets, 3)
@@ -109,6 +113,7 @@ for epoch in range(num_epochs):
     model.train()
     epoch_loss = 0.0
     for inputs, targets in train_loader:
+        inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, targets)

@@ -8,9 +8,9 @@ from torchsummary import summary
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.fc1 = nn.Linear(4 * 10, 1024)
-        self.fc2 = nn.Linear(1024, 1024)
-        self.fc3 = nn.Linear(1024, 36 * 10)
+        self.fc1 = nn.Linear(4 * 10, 2048)
+        self.fc2 = nn.Linear(2048, 2048)
+        self.fc3 = nn.Linear(2048, 36 * 10)
 
     def forward(self, x):
         x = x.view(-1, 4 * 10)
