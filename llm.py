@@ -1,5 +1,4 @@
 import ollama
-from data import examples
 import json
 
 
@@ -29,7 +28,7 @@ Here are some examples of transformations, they have the same rule:
     return intuition_prompt
 
 def create_prompt_code():
-    code_prompt = f"""Now, generate 20 small Python functions that can be useful when solving the task.
+    code_prompt = f"""Now, generate 10 small Python functions that can be useful when solving the task.
 Do not provide a complete function that can solve the task at once, but rather provide multiple, very simple transformation functions that can be used when solving the task.
 Here is an exact template function that you will build on top of:
 ```python
@@ -49,12 +48,13 @@ def function_name(grid):
 
 ---
 
-Now, write 20 new tiny functions related to the task. Remember, all functions must take only one argument: `grid`, and output a grid. Do NOT include functions with more than one argument."""
+Now, write 10 new functions related to the task. Remember, all functions must take only one argument: `grid`, and output a grid. Do NOT include functions with more than one argument."""
     return code_prompt
 
 def main(examples):
+    messages = []
     prompt = create_prompt_intution(examples)
-    messages = [{"role": "user", "content": prompt}]
+    messages.append({"role": "user", "content": prompt})
     intuition = llm(messages, "codestral")
     messages.append({"role": "assistant", "content": intuition})
 
@@ -62,9 +62,5 @@ def main(examples):
     messages.append({"role": "user", "content": prompt})
     code = llm(messages, "codestral")
     code = code.split("```python")[1].split("```")[0]
-
-    print(intuition)
-    print("--------------------------------")
-    print(code)
 
     return intuition, code
